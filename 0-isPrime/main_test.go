@@ -1,10 +1,11 @@
 package main
 
 import (
-	"testing"
-	"os"
+	"bufio"
 	"io"
+	"os"
 	"strings"
+	"testing"
 )
 
 func Test_isPrime(t *testing.T) {
@@ -46,8 +47,6 @@ func Test_isPrime(t *testing.T) {
 	}
 }
 
-
-
 func Test_prompt(t *testing.T) {
 	// save a copy of os.Stdout
 	oldOut := os.Stdout
@@ -75,8 +74,6 @@ func Test_prompt(t *testing.T) {
 	}
 }
 
-
-
 func Test_intro(t *testing.T) {
 	// save a copy of os.Stdout
 	oldOut := os.Stdout
@@ -101,5 +98,34 @@ func Test_intro(t *testing.T) {
 	// perform our test
 	if !strings.Contains(string(out), "Is it prime?") {
 		t.Errorf("intro text not correct; got %s", string(out))
+	}
+}
+
+func Test_checkNum(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{name: "empty", input: "", expected: "Please enter a whole number"},
+		{name: "NaN", input: "types", expected: "Please enter a whole number"},
+		{name: "decimal", input: "1.1", expected: "Please enter a whole number"},
+		{name: "q", input: "q", expected: ""},
+		{name: "neg one", input: "-1", expected: "-1 is negative and is not prime"},
+		{name: "zero", input: "0", expected: "0 is not prime"},
+		{name: "one", input: "1", expected: "1 is not prime"},
+		{name: "two", input: "2", expected: "2 is prime"},
+		{name: "three", input: "3", expected: "3 is prime"},
+		{name: "seven", input: "7", expected: "7 is prime"},
+	}
+
+	for _, e := range tests {
+		input := strings.NewReader(e.input)
+		reader := bufio.NewScanner(input)
+		res, _ := checkNum(reader)
+
+		if !strings.EqualFold(res, e.expected) {
+			t.Errorf("%s: expected %s, but got %s", e.name, res, e.expected)
+		}
 	}
 }
