@@ -29,6 +29,8 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, tmpl stri
 		return err
 	}
 
+	data.IP = app.ipFromContext(r.Context())
+
 	// execute the template, passing data
 	// w.Header().Set("Content-Type", "text/html")
 	err = parsedTemplate.Execute(w, data)
