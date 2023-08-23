@@ -4,6 +4,8 @@ import (
 	"html/template"
 	"net/http"
 	"path"
+	"log"
+	"fmt"
 )
 
 var pathToTemplates = "./templates"
@@ -14,6 +16,21 @@ func (app *application) Home(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) About(w http.ResponseWriter, r *http.Request) {
 	_ = app.render(w, r, "", nil)
+}
+
+func (app *application) Login(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	
+	email := r.Form.Get("email")
+	password := r.Form.Get("password")
+
+	log.Println(email, password)
+	fmt.Fprintf(w, "email: %s, password: %s", email, password)
 }
 
 type TemplateData struct {

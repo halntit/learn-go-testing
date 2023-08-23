@@ -19,7 +19,7 @@ func main() {
 	// start a go routine to check if the number is prime
 	go readUserInput(os.Stdin, doneChan)
 
-	// block until the doneChan gets a value
+	// it's blocking until there's data available on the channel
 	<-doneChan
 
 	// close the channel
