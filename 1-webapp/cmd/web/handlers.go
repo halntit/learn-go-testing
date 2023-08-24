@@ -1,11 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"path"
-	"log"
-	"fmt"
 )
 
 var pathToTemplates = "./templates"
@@ -25,7 +25,16 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	
+
+	// validate data
+	form := NewForm(r.PostForm)
+	form.Required("email", "password")
+
+	if !form.Valid() {
+		fmt.Fprint(w, "failed validation")
+		return
+	}
+
 	email := r.Form.Get("email")
 	password := r.Form.Get("password")
 
