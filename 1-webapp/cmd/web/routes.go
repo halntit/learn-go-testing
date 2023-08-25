@@ -12,8 +12,8 @@ func (app *application) routes() http.Handler {
 
 	// register middleware
 	mux.Use(middleware.Recoverer)
-
-	mux.Use(app.addIPToContext) // self
+	mux.Use(app.addIPToContext)
+	mux.Use(app.Session.LoadAndSave)
 
 	// register routes
 	mux.Get("/", app.Home)
@@ -21,7 +21,7 @@ func (app *application) routes() http.Handler {
 
 	// static assets
 	fileServer := http.FileServer(http.Dir("./static/"))
-	mux.Handle("/static/*", http.StripPrefix("/static/", fileServer))
+	mux.Handle("/static/*", http.StripPrefix("/static", fileServer))
 
 	return mux
 }
