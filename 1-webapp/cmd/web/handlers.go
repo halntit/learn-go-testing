@@ -47,8 +47,14 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) {
 	email := r.Form.Get("email")
 	password := r.Form.Get("password")
 
+	user, err := app.DB.GetUserByEmail(email)
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println(user.FirstName)
+
 	log.Println(email, password)
-	fmt.Fprintf(w, "email: %s, password: %s", email, password)
+	fmt.Fprintf(w, "email: %s", email)
 }
 
 type TemplateData struct {
