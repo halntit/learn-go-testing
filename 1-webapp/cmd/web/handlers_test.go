@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -119,4 +120,69 @@ func addContextAndSessionToRequest(req *http.Request, app application) *http.Req
 	req = req.WithContext(getCtx(req))
 	ctx, _ := app.Session.Load(req.Context(), req.Header.Get("X-Session"))
 	return req.WithContext(ctx)
+}
+
+func Test_app_Login(t *testing.T) {
+	var tests = []struct{
+		name string
+		postedData url.Values
+		expectedStatusCode int
+		expectedLoc string
+	}{
+		{
+			name: "valid login",
+			postedData: url.Values{
+				"email": { "admin@example.com" },
+				"password": { "secret" },
+			},
+			expectedStatusCode: http.StatusSeeOther,
+			expectedLoc: "/user/profile",
+		},
+		{
+			name: "missing form data",
+			postedData: url.Values{
+				"email": { "" },
+				"password": { "" },
+			},
+			expectedStatusCode: http.StatusSeeOther,
+			expectedLoc: "/",
+		},
+		{
+			name: "user not found",
+			postedData: url.Values{
+				"email": { "you@there.com" },
+				"password": { "password" },
+			},
+			expectedStatusCode: http.StatusSeeOther,
+			expectedLoc: "/",
+		},
+		{
+			name: "bad credentials",
+			postedData: url.Values{
+				"email": { "admin@example.com" },
+				"password": { "secrets" },
+			},
+			expectedStatusCode: http.StatusSeeOther,
+			expectedLoc: "/",
+		},
+	}
+
+	for _, e := range tests {
+		req, _ := http.NewRequest("POST", "/login", strings.NewReader(e.postedData.Encode()))
+		req = addContextAndSessionToRequest(req, app)
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(app.Login)
+		handler.ServeHTTP(rr, req)
+
+		if rr.Code != e.expectedStatusCode {
+			t.Errorf("%s: returned wrong status code: got %v want %v", e.name, rr.Code, e.expectedStatusCode)
+		}
+
+		actualLoc := rr.Result().Header.Get("Location")
+		// actualLoc := rr.Result().Location().String()
+		if actualLoc != e.expectedLoc {
+			t.Errorf("%s: returned wrong location header: got %v want %v", e.name, actualLoc, e.expectedLoc)
+		}
+	}
 }
