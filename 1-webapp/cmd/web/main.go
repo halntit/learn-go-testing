@@ -10,8 +10,8 @@ import (
 )
 
 type application struct {
-	DSN string
-	DB db.PostgresConn
+	DSN     string
+	DB      db.PostgresConn
 	Session *scs.SessionManager
 }
 
@@ -26,6 +26,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer conn.Close() // don't close until main exit
 
 	app.DB = db.PostgresConn{DB: conn}
 
