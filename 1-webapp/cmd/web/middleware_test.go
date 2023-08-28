@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"webapp/pkg/data"
 )
 
 func Test_application_addIpToContext(t *testing.T) {
@@ -72,5 +73,39 @@ func Test_application_ipFromContext(t *testing.T) {
 	// perform the test
 	if !strings.EqualFold("whatever", ip) {
 		t.Error("wrong value returned")
+	}
+}
+
+func Test_app_auth(t *testing.T) {
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// make sure that the value exists in the context
+	})
+
+	var tests = []struct {
+		name string
+		isAuth bool
+	}{
+		{"logged in", false},
+		{"not logged in", true},
+	}
+
+	for _, e := range tests {
+		// create a request
+		handlerToTest := app.auth(nextHandler)
+		req := httptest.NewRequest("GET", "http://testing", nil)
+		req = addContextAndSessionToRequest(req, app)
+		if e.isAuth {
+			app.Session.Put(req.Context(), "user", data.User{ID: 1})
+		}
+		rr := httptest.NewRecorder()
+		handlerToTest.ServeHTTP(rr, req)
+
+		if e.isAuth && rr.Code != http.StatusOK {
+			t.Errorf("%s returned wrong status code: got %v want 200", e.name, rr.Code)
+		}
+
+		if !e.isAuth && rr.Code != http.StatusTemporaryRedirect {
+			t.Errorf("%s returned wrong status code: got %v want 307", e.name, rr.Code)
+		}
 	}
 }
