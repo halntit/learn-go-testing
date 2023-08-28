@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path"
 	"time"
+	"webapp/pkg/data"
 )
 
 var pathToTemplates = "./templates"
@@ -71,11 +72,14 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 type TemplateData struct {
-	IP   string
-	Data map[string]any
+	IP    string
+	Data  map[string]any
+	Error string
+	Flash string
+	User  data.User
 }
 
-func (app *application) render(w http.ResponseWriter, r *http.Request, tmpl string, data *TemplateData) error {
+func (app *application) render(w http.ResponseWriter, r *http.Request, tmpl string, td *TemplateData) error {
 	// parse the template from disk
 	parsedTemplate, err := template.ParseFiles(path.Join(pathToTemplates, tmpl), path.Join(pathToTemplates, "base.layout.gohtml"))
 	if err != nil {
@@ -83,11 +87,14 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, tmpl stri
 		return err
 	}
 
-	data.IP = app.ipFromContext(r.Context())
+	td.IP = app.ipFromContext(r.Context())
+
+	td.Error = app.Session.PopString(r.Context(), "error") // get error from session, if not found return empty string
+	td.Flash = app.Session.PopString(r.Context(), "flash")
 
 	// execute the template, passing data
 	// w.Header().Set("Content-Type", "text/html")
-	err = parsedTemplate.Execute(w, data)
+	err = parsedTemplate.Execute(w, td)
 	if err != nil {
 		return err
 	}
