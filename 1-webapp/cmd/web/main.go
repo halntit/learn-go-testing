@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"log"
+	"encoding/gob" // go binary encoding
 	"net/http"
 	"webapp/pkg/db"
+	"webapp/pkg/data"
 
 	"github.com/alexedwards/scs/v2"
 )
@@ -16,6 +18,8 @@ type application struct {
 }
 
 func main() {
+	gob.Register(data.User{})
+
 	// set up an app config
 	app := application{}
 

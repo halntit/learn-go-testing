@@ -57,15 +57,17 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println(password, user.FirstName)
-
 	// authenticate user, if not successful, redirect to login page with error message
+	if !app.authenticate(r, user, password) {
+		app.Session.Put(r.Context(), "error", "Invalid login!")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
 
 	// prevent fixation attacks
 	_ = app.Session.RenewToken(r.Context())
 
 	// store success message in session
-
 	// redirect to profile
 	app.Session.Put(r.Context(), "flash", "Successfully logged in!")
 	http.Redirect(w, r, "/user/profile", http.StatusSeeOther)
@@ -100,4 +102,15 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, tmpl stri
 	}
 
 	return nil
+}
+
+func (app *application) authenticate(r *http.Request, user *data.User, password string) bool {
+	if valid, err := user.PasswordMatches(password); err != nil || !valid {
+		return false
+	}
+
+	// it's OK to put private data in session
+	// but if we want to put user object in session we need to register it first (see main.go)
+	app.Session.Put(r.Context(), "user", user)
+	return true
 }
