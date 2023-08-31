@@ -1,19 +1,20 @@
 package main
 
 import (
+	"encoding/gob" // go binary encoding
 	"flag"
 	"log"
-	"encoding/gob" // go binary encoding
 	"net/http"
-	"webapp/pkg/db"
 	"webapp/pkg/data"
+	"webapp/pkg/repository"
+	"webapp/pkg/repository/dbrepo"
 
 	"github.com/alexedwards/scs/v2"
 )
 
 type application struct {
 	DSN     string
-	DB      db.PostgresConn
+	DB      repository.DatabaseRepo
 	Session *scs.SessionManager
 }
 
@@ -32,7 +33,7 @@ func main() {
 	}
 	defer conn.Close() // don't close until main exit
 
-	app.DB = db.PostgresConn{DB: conn}
+	app.DB = &dbrepo.PostgresDBRepo{DB: conn}
 
 	// get a session manager
 	app.Session = getSession()
