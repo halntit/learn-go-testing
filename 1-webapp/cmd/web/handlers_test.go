@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,12 +13,15 @@ import (
 
 func Test_application_handlers(t *testing.T) {
 	var theTests = []struct {
-		name               string
-		url                string
-		expectedStatusCode int
+		name                    string
+		url                     string
+		expectedStatusCode      int
+		expectedURL             string
+		expectedFirstStatusCode int
 	}{
-		{"home", "/", http.StatusOK},
-		{"404", "/random", http.StatusNotFound},
+		{"home", "/", http.StatusOK, "/", http.StatusOK},
+		{"404", "/random", http.StatusNotFound, "/random", http.StatusNotFound},
+		{"profile", "/user/profile", http.StatusOK, "/", http.StatusTemporaryRedirect},
 	}
 
 	routes := app.routes()
@@ -25,6 +29,17 @@ func Test_application_handlers(t *testing.T) {
 	// create a test server
 	ts := httptest.NewTLSServer(routes)
 	defer ts.Close() // as soon as test finish, close server
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	client := &http.Client{
+		Transport: tr,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
 
 	// range through the tests
 	for _, e := range theTests {
@@ -36,6 +51,15 @@ func Test_application_handlers(t *testing.T) {
 
 		if resp.StatusCode != e.expectedStatusCode {
 			t.Errorf("for %s, expected %d but got %d", e.name, e.expectedStatusCode, resp.StatusCode)
+		}
+
+		if resp.Request.URL.Path != e.expectedURL {
+			t.Errorf("for %s, expected final url of %s but got %s", e.name, e.expectedURL, resp.Request.URL.Path)
+		}
+
+		resp2, _ := client.Get(ts.URL + e.url)
+		if resp2.StatusCode != e.expectedFirstStatusCode {
+			t.Errorf("for %s, expected first return status code to be %d but got %d", e.name, e.expectedFirstStatusCode, resp2.StatusCode)
 		}
 	}
 }
@@ -123,47 +147,47 @@ func addContextAndSessionToRequest(req *http.Request, app application) *http.Req
 }
 
 func Test_app_Login(t *testing.T) {
-	var tests = []struct{
-		name string
-		postedData url.Values
+	var tests = []struct {
+		name               string
+		postedData         url.Values
 		expectedStatusCode int
-		expectedLoc string
+		expectedLoc        string
 	}{
 		{
 			name: "valid login",
 			postedData: url.Values{
-				"email": { "admin@example.com" },
-				"password": { "secret" },
+				"email":    {"admin@example.com"},
+				"password": {"secret"},
 			},
 			expectedStatusCode: http.StatusSeeOther,
-			expectedLoc: "/user/profile",
+			expectedLoc:        "/user/profile",
 		},
 		{
 			name: "missing form data",
 			postedData: url.Values{
-				"email": { "" },
-				"password": { "" },
+				"email":    {""},
+				"password": {""},
 			},
 			expectedStatusCode: http.StatusSeeOther,
-			expectedLoc: "/",
+			expectedLoc:        "/",
 		},
 		{
 			name: "user not found",
 			postedData: url.Values{
-				"email": { "you@there.com" },
-				"password": { "password" },
+				"email":    {"you@there.com"},
+				"password": {"password"},
 			},
 			expectedStatusCode: http.StatusSeeOther,
-			expectedLoc: "/",
+			expectedLoc:        "/",
 		},
 		{
 			name: "bad credentials",
 			postedData: url.Values{
-				"email": { "admin@example.com" },
-				"password": { "secrets" },
+				"email":    {"admin@example.com"},
+				"password": {"secrets"},
 			},
 			expectedStatusCode: http.StatusSeeOther,
-			expectedLoc: "/",
+			expectedLoc:        "/",
 		},
 	}
 
