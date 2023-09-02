@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 	// set up our docker options, specifying the image and so forth
 	opts := dockertest.RunOptions{
 		Repository: "postgres",
-		Tag: "14.5",
+		Tag:        "14.5",
 		Env: []string{
 			"POSTGRES_USER=" + user,
 			"POSTGRES_PASSWORD=" + password,
@@ -75,6 +75,10 @@ func TestMain(m *testing.M) {
 	}
 
 	// populate the database with empty tables
+	err = createTables()
+	if err != nil {
+		log.Fatalf("Error creating tables: %s", err)
+	}
 
 	// run tests
 	code := m.Run()
@@ -82,4 +86,27 @@ func TestMain(m *testing.M) {
 	// clean up
 
 	os.Exit(code)
+}
+
+func createTables() error {
+	tableSQL, err := os.ReadFile("./testdata/users.sql")
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	_, err = testDB.Exec(string(tableSQL))
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
+}
+
+func Test_pingDB(t *testing.T) {
+	err := testDB.Ping()
+	if err != nil {
+		t.Error(err)
+	}
 }
