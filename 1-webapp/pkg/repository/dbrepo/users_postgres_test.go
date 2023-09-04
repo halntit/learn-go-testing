@@ -1,3 +1,5 @@
+//go:build integration
+
 package dbrepo
 
 import (
@@ -15,6 +17,12 @@ import (
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 )
+
+/*
+	// go:build integration <- error, this is a comment
+	//go:build integration <- GOOD, this is a build tag
+	to run test with tag -> go test -tags=integration
+*/
 
 var (
 	host     = "localhost"
