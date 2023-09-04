@@ -3,9 +3,11 @@ package dbrepo
 import (
 	"database/sql"
 	"fmt"
+	"time"
 	"log"
 	"os"
 	"testing"
+	"webapp/pkg/data"
 
 	_ "github.com/jackc/pgconn"
 	_ "github.com/jackc/pgx/v4"
@@ -26,6 +28,7 @@ var (
 var resource *dockertest.Resource
 var pool *dockertest.Pool
 var testDB *sql.DB
+var testRepo *PostgresDBRepo
 
 func TestMain(m *testing.M) {
 	// connect to docker; fail if docker not running
@@ -56,8 +59,8 @@ func TestMain(m *testing.M) {
 	// get a resource (docker image)
 	resource, err = pool.RunWithOptions(&opts)
 	if err != nil {
-		_ = pool.Purge(resource)
 		log.Fatalf("could not start resource: %s", err)
+		_ = pool.Purge(resource)
 	}
 
 	// start the image and wait until it's ready
@@ -80,10 +83,16 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Error creating tables: %s", err)
 	}
 
+	// set up test repo, must be before running tests
+	testRepo = &PostgresDBRepo{DB: testDB}
+
 	// run tests
 	code := m.Run()
 
-	// clean up
+	// clean up (remove container and image)
+	if err := pool.Purge(resource); err != nil {
+		log.Fatalf("count not purge resource: %s", err)
+	}
 
 	os.Exit(code)
 }
@@ -108,5 +117,25 @@ func Test_pingDB(t *testing.T) {
 	err := testDB.Ping()
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestPostgresDBRepoInsertUser(t *testing.T) {
+	testUser := data.User{
+		Email:    "x@x.com",
+		Password: "password",
+		FirstName: "Admin",
+		LastName: "User",
+		IsAdmin: 1,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	id, err := testRepo.InsertUser(testUser)
+	if err != nil {
+		t.Errorf("Insert user return error: %s", err)
+	}
+
+	if id != 1 {
+		t.Errorf("Insert user return wrong id: %d", id)
 	}
 }

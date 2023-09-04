@@ -31,12 +31,10 @@ func Test_application_addIpToContext(t *testing.T) {
 		}
 
 		// make sure we got a string back
-		ip, ok := val.(string)
+		_, ok := val.(string)
 		if !ok {
 			t.Error("not string")
 		}
-
-		t.Log(ip)
 	})
 
 	for _, e := range tests {
