@@ -122,7 +122,7 @@ func Test_pingDB(t *testing.T) {
 
 func TestPostgresDBRepoInsertUser(t *testing.T) {
 	testUser := data.User{
-		Email:    "x@x.com",
+		Email: "x@x.com",
 		Password: "password",
 		FirstName: "Admin",
 		LastName: "User",
@@ -137,5 +137,95 @@ func TestPostgresDBRepoInsertUser(t *testing.T) {
 
 	if id != 1 {
 		t.Errorf("Insert user return wrong id: %d", id)
+	}
+}
+
+func TestPostgresDBRepoAllUsers(t *testing.T) {
+	users, err := testRepo.AllUsers()
+	if err != nil {
+		t.Errorf("All users return error: %s", err)
+	}
+
+	if len(users) != 1 {
+		t.Errorf("All users return wrong number of users: %d", len(users))
+	}
+
+	testUser := data.User{
+		Email: "x2@x.com",
+		Password: "password",
+		FirstName: "Admin",
+		LastName: "Super",
+		IsAdmin: 1,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	_, _ = testRepo.InsertUser(testUser)
+	users, err = testRepo.AllUsers()
+	if err != nil {
+		t.Errorf("All users return error: %s", err)
+	}
+
+	if len(users) != 2 {
+		t.Errorf("All users return wrong number of users: %d", len(users))
+	}
+}
+
+func TestPostgresDBRepoGetUser(t *testing.T) {
+	user, err := testRepo.GetUser(1)
+	if err != nil {
+		t.Errorf("Get user by id return error: %s", err)
+	}
+
+	if user.Email != "x@x.com" {
+		t.Errorf("Get user by id return wrong email: %s", user.Email)
+	}
+
+	user, err = testRepo.GetUserByEmail("x@x.com")
+	if err != nil {
+		t.Errorf("Get user by id return error: %s", err)
+	}
+
+	if user.ID != 1 {
+		t.Errorf("Get user by email return wrong id: %d", user.ID)
+	}
+}
+
+func TestPostgresDBRepoUpdateUser(t *testing.T) {
+	testUser := data.User{
+		Email: "x@x.com",
+		Password: "password",
+		FirstName: "Admin",
+		LastName: "User",
+		IsAdmin: 1,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	id, err := testRepo.InsertUser(testUser)
+	if err != nil {
+		t.Errorf("Insert user return error: %s", err)
+	}
+
+	testUser.Email = "x2@x.com"
+	testUser.ID = id
+	err = testRepo.UpdateUser(testUser)
+	if err != nil {
+		t.Errorf("Update user return error: %s", err)
+	}
+
+	user, err := testRepo.GetUser(id)
+	if user.Email != "x2@x.com" {
+		t.Errorf("Get user by id return wrong email: %s", user.Email)
+	}
+}
+
+func TestPostgresDBRepoDeleteUser(t *testing.T) {
+	err := testRepo.DeleteUser(1)
+	if err != nil {
+		t.Errorf("Delete user return error: %s", err)
+	}
+
+	user, err := testRepo.GetUser(1)
+	if user != nil {
+		t.Errorf("Get user by id return wrong user: %v", user)
 	}
 }
