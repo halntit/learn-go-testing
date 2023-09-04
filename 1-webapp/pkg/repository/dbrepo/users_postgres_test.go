@@ -229,3 +229,42 @@ func TestPostgresDBRepoDeleteUser(t *testing.T) {
 		t.Errorf("Get user by id return wrong user: %v", user)
 	}
 }
+
+func TestPostgresDBRepoResetPassword(t *testing.T) {
+	err := testRepo.ResetPassword(2, "newpass")
+	if err != nil {
+		t.Error("Reset password return error:", err)
+	}
+
+	user, err := testRepo.GetUser(2)
+	matches, err := user.PasswordMatches("newpass")
+	if err != nil {
+		t.Error("Password matches return error:", err)
+	}
+
+	if !matches {
+		t.Error("Password does not match")
+	}
+}
+
+func TestPostgresDBRepoInsertUserImage(t *testing.T) {
+	var image data.UserImage
+	image.UserID = 2
+	image.FileName = "random.jpg"
+	image.CreatedAt = time.Now()
+	image.UpdatedAt = time.Now()
+	newId, err := testRepo.InsertUserImage(image)
+	if err != nil {
+		t.Error("Insert user return error", err)
+	}
+
+	if newId != 1 { // first image in database
+		t.Error("Insert user return wrong id", newId)
+	}
+
+	image.UserID = 10000 // non exist
+	_, err = testRepo.InsertUserImage(image)
+	if err == nil {
+		t.Error("Insert with non existed user ID")
+	}
+}
