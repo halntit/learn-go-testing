@@ -7,6 +7,15 @@ import (
 // var pathToTemplates = "./templates"
 
 func (app *application) authenticate(w http.ResponseWriter, r *http.Request) {
+	// read a JSON payload
+
+	// look up user by email address
+
+	// check password
+
+	// generate tokens
+
+	// send tokens to client
 
 }
 
