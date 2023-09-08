@@ -76,3 +76,44 @@ func (app *application) getTokenFromHeaderAndVerify(w http.ResponseWriter, r *ht
 
 	return token, claims, nil
 }
+
+func (app *application) generateTokenPair(user *data.User) (TokenPairs, error) {
+	// create the token
+	token := jwt.New(jwt.SigningMethodHS256)
+	
+	// set claims
+	claims := token.Claims.(jwt.MapClaims)
+	claims["name"] = fmt.Sprintf("%s %s", user.FirstName, user.LastName)
+	claims["sub"] = fmt.Sprint(user.ID)
+	claims["aud"] = app.Domain // audience
+	claims["iss"] = app.Domain
+	if user.IsAdmin == 1 {
+		claims["admin"] = true
+	} else {
+		claims["admin"] = false
+	}
+	claims["exp"] = time.Now().Add(jwtTokenExpiry).Unix()
+
+	// create signed token
+	signedAccessToken, err != token.SignedString([]byte(app.JWTSecret))
+	if err != nil {
+		return TokenPairs{}, err
+	}
+
+	// create refresh token
+	refreshToken := jwt.New(jwt.SigningMethodHS256)
+	refreshTokenClaims := refreshToken.Claims.(jwt.MapClaims)
+	refreshTokenClaims["sub"] = fmt.Sprint(user.ID)
+	refreshTokenClaims["exp"] = time.Now().Add(refreshTokenExpiry).Unix()
+
+	// create signed token
+	signedRefreshToken, err != refreshToken.SignedString([]byte(app.JWTSecret))
+	if err != nil {
+		return TokenPairs{}, err
+	}
+
+	return TokenPairs{
+		Token:        signedAccessToken,
+		RefreshToken: signedRefreshToken,
+	}, nil
+}
