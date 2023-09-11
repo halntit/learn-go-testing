@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"webapp/pkg/data"
+
 	"github.com/golang-jwt/jwt/v4"
 )
 
@@ -80,7 +82,7 @@ func (app *application) getTokenFromHeaderAndVerify(w http.ResponseWriter, r *ht
 func (app *application) generateTokenPair(user *data.User) (TokenPairs, error) {
 	// create the token
 	token := jwt.New(jwt.SigningMethodHS256)
-	
+
 	// set claims
 	claims := token.Claims.(jwt.MapClaims)
 	claims["name"] = fmt.Sprintf("%s %s", user.FirstName, user.LastName)
@@ -95,7 +97,7 @@ func (app *application) generateTokenPair(user *data.User) (TokenPairs, error) {
 	claims["exp"] = time.Now().Add(jwtTokenExpiry).Unix()
 
 	// create signed token
-	signedAccessToken, err != token.SignedString([]byte(app.JWTSecret))
+	signedAccessToken, err := token.SignedString([]byte(app.JWTSecret))
 	if err != nil {
 		return TokenPairs{}, err
 	}
@@ -107,7 +109,7 @@ func (app *application) generateTokenPair(user *data.User) (TokenPairs, error) {
 	refreshTokenClaims["exp"] = time.Now().Add(refreshTokenExpiry).Unix()
 
 	// create signed token
-	signedRefreshToken, err != refreshToken.SignedString([]byte(app.JWTSecret))
+	signedRefreshToken, err := refreshToken.SignedString([]byte(app.JWTSecret))
 	if err != nil {
 		return TokenPairs{}, err
 	}
