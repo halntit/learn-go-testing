@@ -33,6 +33,7 @@ func Test_app_getTokenFromHeaderAndVerify(t *testing.T) {
 		{"invalid", fmt.Sprintf("Bearer %s1", tokens.Token), true, true, app.Domain},
 		{"no Bearer", fmt.Sprintf("Bear %s1", tokens.Token), true, true, app.Domain},
 		{"3 header parts", fmt.Sprintf("Bear %s 1", tokens.Token), true, true, app.Domain},
+		// make sure this the last one to run
 		{"wrong issuer", fmt.Sprintf("Bearer %s", tokens.Token), true, true, "anotherdomain.com"},
 	}
 
